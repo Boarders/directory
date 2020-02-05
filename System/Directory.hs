@@ -31,6 +31,7 @@ module System.Directory
     , removePathForcibly
     , renameDirectory
     , listDirectory
+    , listDirectoryEither
     , getDirectoryContents
     -- ** Current working directory
     , getCurrentDirectory
@@ -1129,6 +1130,21 @@ getDirectoryContents path =
 listDirectory :: FilePath -> IO [FilePath]
 listDirectory path = filter f <$> getDirectoryContents path
   where f filename = filename /= "." && filename /= ".."
+
+-- | Similar to 'listDirectory', but returns `Left dir` for all directories
+-- or symbolic links to directories and `Right file` for those files for which are
+-- not directories.
+--
+-- @since 1.3.6.0
+--
+listDirectoryEither :: FilePath -> IO [Either FilePath FilePath]
+listDirectoryEither path = listDirectory path >>= traverse label
+  where
+    label :: FilePath -> IO (Either FilePath FilePath)
+    label p =
+      do
+        b <- doesDirectoryExist p
+        pure $ if b then Left p else Right p
 
 -- | Obtain the current working directory as an absolute path.
 --
